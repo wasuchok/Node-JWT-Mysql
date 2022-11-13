@@ -52,8 +52,9 @@ app.post('/login', jsonParser, function(req,res,next){
       }
       bcrypt.compare(req.body.password,users[0].password,function(err,islogin){
         if(islogin){
-          const token = jwt.sign({ email : users[0].email }, secret, { expiresIn : '1h'})
+          const token = jwt.sign({ id : users[0].id, email : users[0].email , role : users[0].role }, secret, { expiresIn : '1h'})
           res.json({status: 'ok', message: 'login Successfuly', token})
+          console.log(users[0].role);
         }else{
           res.json({status: 'error', message: 'login failed'})
         }
@@ -62,13 +63,24 @@ app.post('/login', jsonParser, function(req,res,next){
   )
 })
 
-app.post('/authen', jsonParser, function(req,res,next){
+app.get('/authen', jsonParser, function(req,res,next){
   try{
     const token = req.headers.authorization.split(' ')[1]
     const decoded = jwt.verify(token, secret)
-    res.json({status: 'ok', decoded})
+    // res.json({status: 'ok', decoded})
+    console.log(decoded.role)
+    if(decoded.role == "m"){
+      connection.query(
+        'SELECT * FROM `users` WHERE `id` = ?',
+        [decoded.id],
+        function(err,results){
+          console.log(results)
+          res.json({status: 'ok', decoded, results})
+        }
+    )
+    }
   }catch(err){
-    res.json({status: 'error', message: err})
+    res.json({status: 'error', message: "no login"})
   }
 })
 
